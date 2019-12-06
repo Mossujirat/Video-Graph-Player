@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'MainForm5.ui'
+# Form implementation generated from reading ui file 'MainForm6.ui'
 #
 # Created by: PyQt5 UI code generator 5.12
 #
@@ -44,10 +44,6 @@ class Ui_MainWindow(object):
         self.openButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.openButton.setObjectName("openButton")
         self.horizontalLayout_5.addWidget(self.openButton)
-        self.autoButton = QtWidgets.QPushButton(self.mainarea1)
-        self.autoButton.setEnabled(False)
-        self.autoButton.setObjectName("autoButton")
-        self.horizontalLayout_5.addWidget(self.autoButton)
         self.slapButton = QtWidgets.QPushButton(self.mainarea1)
         self.slapButton.setEnabled(False)
         self.slapButton.setObjectName("slapButton")
@@ -193,6 +189,14 @@ class Ui_MainWindow(object):
         self.horizontalSlider_graph.setTickPosition(QtWidgets.QSlider.NoTicks)
         self.horizontalSlider_graph.setObjectName("horizontalSlider_graph")
         self.horizontalLayout_2.addWidget(self.horizontalSlider_graph)
+        self.comboBox_peak = QtWidgets.QComboBox(self.menu_graph)
+        self.comboBox_peak.setEnabled(False)
+        self.comboBox_peak.setObjectName("comboBox_peak")
+        self.comboBox_peak.addItem("")
+        self.comboBox_peak.addItem("")
+        self.comboBox_peak.addItem("")
+        self.comboBox_peak.addItem("")
+        self.horizontalLayout_2.addWidget(self.comboBox_peak)
         self.comboBox_type = QtWidgets.QComboBox(self.menu_graph)
         self.comboBox_type.setEnabled(False)
         self.comboBox_type.setObjectName("comboBox_type")
@@ -218,7 +222,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "Video Player with Signal"))
         self.fileButton.setText(_translate("MainWindow", "Open Data File"))
         self.openButton.setText(_translate("MainWindow", "Open Video"))
-        self.autoButton.setText(_translate("MainWindow", "Slapping Detection"))
         self.slapButton.setText(_translate("MainWindow", "Save Slapping 1"))
         self.slapButton2.setText(_translate("MainWindow", "Save Slapping 2"))
         self.fallButton.setText(_translate("MainWindow", "Save Falling"))
@@ -236,6 +239,10 @@ class Ui_MainWindow(object):
         self.comboBox_graph.setItemText(0, _translate("MainWindow", "None"))
         self.comboBox_graph.setItemText(1, _translate("MainWindow", "1 second"))
         self.comboBox_graph.setItemText(2, _translate("MainWindow", "5 second"))
+        self.comboBox_peak.setItemText(0, _translate("MainWindow", "None"))
+        self.comboBox_peak.setItemText(1, _translate("MainWindow", "1"))
+        self.comboBox_peak.setItemText(2, _translate("MainWindow", "2"))
+        self.comboBox_peak.setItemText(3, _translate("MainWindow", "3"))
         self.comboBox_type.setItemText(0, _translate("MainWindow", "Acc"))
         self.comboBox_type.setItemText(1, _translate("MainWindow", "Gyro"))
         self.forwardButton_graph.setText(_translate("MainWindow", "Forward"))

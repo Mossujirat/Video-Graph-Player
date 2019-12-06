@@ -4,7 +4,7 @@ from time import sleep
 import cv2
 from threading import Timer,Thread,Event
 from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QApplication,QMainWindow,QFileDialog,QVBoxLayout
+from PyQt5.QtWidgets import QApplication,QMainWindow,QFileDialog,QVBoxLayout,QMessageBox
 from PyQt5 import QtGui, QtCore ,QtWidgets
 
 from MainForm import Ui_MainWindow
@@ -13,6 +13,7 @@ import pandas as pd
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import datetime
+from scipy.signal import find_peaks
 
 ############## Video Updating ##############
 class workerThread(QThread):
@@ -131,7 +132,6 @@ class workerThread3(QThread):
                         self.mw.ui.fallButton.setEnabled(True)
                         self.mw.ui.slapButton.setEnabled(True)
                         self.mw.ui.slapButton2.setEnabled(True)
-                        self.mw.ui.autoButton.setEnabled(True)
                         self.mw.ui.matchingButton.setEnabled(True)
                         self.mw.autoData = False
                     elif self.mw.matching == 1:
@@ -153,7 +153,6 @@ class workerThread3(QThread):
                         self.mw.ui.fallButton.setEnabled(True)
                         self.mw.ui.slapButton.setEnabled(True)
                         self.mw.ui.slapButton2.setEnabled(True)
-                        self.mw.ui.autoButton.setEnabled(True)
                         self.mw.ui.matchingButton.setEnabled(True)
                         self.mw.autoData = False
                     QApplication.processEvents()
@@ -217,7 +216,6 @@ class MyApp(QMainWindow):
         self.ui.forwardButton_video.setIcon(QtGui.QIcon('asset/forwardButton.png'))
         self.ui.backwardButton_video.setIcon(QtGui.QIcon('asset/backwardButton.png'))
         self.ui.matchingButton.setIcon(QtGui.QIcon('asset/matchingButton.png'))
-        self.ui.autoButton.setIcon(QtGui.QIcon('asset/autoButton.png'))
         self.ui.fileButton.setIcon(QtGui.QIcon('asset/fileButton.png'))
         self.ui.openButton.setIcon(QtGui.QIcon('asset/openButton.png'))
 
@@ -229,7 +227,6 @@ class MyApp(QMainWindow):
         # set graph and video button (Connection)
         self.ui.pauseButton.clicked.connect(self.pauseButtonPressed)
         self.ui.startButton.clicked.connect(self.startButtonPressed)
-        self.ui.autoButton.clicked.connect(self.autoButtonPressed)
         self.ui.forwardButton.clicked.connect(self.forwardButtonPressed)
         self.ui.backwardButton.clicked.connect(self.backwardButtonPressed)
         self.ui.matchingButton.clicked.connect(self.matchingButtonPressed)
@@ -243,6 +240,7 @@ class MyApp(QMainWindow):
         self.ui.forwardButton_graph.clicked.connect(self.forwardButtonGraphPressed)
         self.ui.comboBox_graph.currentIndexChanged.connect(self.selectGraphChange)
         self.ui.comboBox_type.currentIndexChanged.connect(self.selectTypeChange)
+        self.ui.comboBox_peak.currentIndexChanged.connect(self.selectPeakChange)
 
         # set graph
         layout = QVBoxLayout()
@@ -307,7 +305,6 @@ class MyApp(QMainWindow):
     ######################### Auto run ##############################
     def pauseButtonPressed(self):
         self.autoData = False   
-        self.ui.autoButton.setEnabled(True)
         # Main menu and slider
         self.ui.horizontalSlider_video.setEnabled(True) 
         self.ui.startButton.setEnabled(True)
@@ -331,6 +328,7 @@ class MyApp(QMainWindow):
             self.ui.horizontalSlider_graph.setEnabled(False) 
             self.ui.comboBox_graph.setEnabled(True)
             self.ui.comboBox_type.setEnabled(True)
+            self.ui.comboBox_peak.setEnabled(True)
         else: # if matching button was not clicked
             # For video     
             self.ui.forwardButton_video.setEnabled(True)
@@ -343,6 +341,7 @@ class MyApp(QMainWindow):
             self.ui.fileButton.setEnabled(True)
             self.ui.comboBox_graph.setEnabled(True)
             self.ui.comboBox_type.setEnabled(True)
+            self.ui.comboBox_peak.setEnabled(True)
             self.ui.horizontalSlider_graph.setEnabled(True) 
 
     def startButtonPressed(self):
@@ -363,8 +362,8 @@ class MyApp(QMainWindow):
             self.ui.horizontalSlider_graph.setEnabled(False)
             self.ui.comboBox_graph.setEnabled(False)
             self.ui.comboBox_type.setEnabled(False)
+            self.ui.comboBox_peak.setEnabled(False)
             # For main menu
-            self.ui.autoButton.setEnabled(False)
             self.ui.fallButton.setEnabled(False)
             self.ui.slapButton.setEnabled(False)
             self.ui.slapButton2.setEnabled(False)
@@ -372,22 +371,6 @@ class MyApp(QMainWindow):
             self.ui.forwardButton.setEnabled(False)
             self.ui.backwardButton.setEnabled(False)
             self.ui.matchingButton.setEnabled(False)
-
-    def autoButtonPressed(self):
-        a = np.array((self.data[:,8]))
-        if self.matching == 0:
-            self.ui.horizontalSlider_graph.setValue(a.argmax())
-            self.frameGraphUpdate = self.ui.horizontalSlider_graph.value()
-            self.sliderbusyGraph = False
-            self.isUpdateGraph = True
-        elif self.matching == 1:
-            current = a.argmax() - self.matchGraph
-            self.frameGraphUpdate = a.argmax()
-            self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
-            self.frameVideo = int(round(self.matchVideo + (current*(self.videoUpdate/self.graphUpdate))))
-            self.ui.horizontalSlider_video.setValue(self.frameVideo)
-            self.isUpdateGV = True
-            self.sliderbusyVideo = False
 
     def backwardButtonPressed(self):
         if self.frameGraphUpdate-(self.graphUpdate*3) >= 0 and self.frameVideo-(self.videoUpdate*3) >= 0:
@@ -440,6 +423,23 @@ class MyApp(QMainWindow):
             self.ui.forwardButton.setEnabled(True)
             self.ui.backwardButton.setEnabled(True)
             self.ui.comboBox_video.setEnabled(True)
+    
+    ######################### Message Box ##############################
+    def errorMessage(self,message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("Error")
+        msg.setInformativeText(str(message))
+        msg.setWindowTitle("Error")
+        msg.exec_()      
+    
+    def successMessage(self,message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Success")
+        msg.setInformativeText(str(message))
+        msg.setWindowTitle("Success")
+        msg.exec_()  
 
     ######################### Save config ##############################
     def fallButtonPressed(self):
@@ -465,6 +465,8 @@ class MyApp(QMainWindow):
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Fall-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+ 
             ", Fall-Graph = " +str(self.timeGraph)+ " second") 
+        self.successMessage("Save successfully - Fall-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+ 
+            ", Fall-Graph = " +str(self.timeGraph)+ " second")
 
     def slapButtonPressed(self):
         # set name for saving file
@@ -489,6 +491,8 @@ class MyApp(QMainWindow):
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Slap1-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
             ", Slap1-Graph = " +str(self.timeGraph)+ " second") 
+        self.successMessage("Save successfully - Slap1-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
+            ", Slap1-Graph = " +str(self.timeGraph)+ " second") 
 
     def slapButton2Pressed(self):
         # set name for saving file
@@ -512,6 +516,8 @@ class MyApp(QMainWindow):
         config["Slap2-Graph"] = str(self.timeStamp[self.frameGraphUpdate])
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Slap2-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
+            ", Slap2-Graph = " +str(self.timeGraph)+ " second")  
+        self.successMessage("Save successfully - Slap2-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
             ", Slap2-Graph = " +str(self.timeGraph)+ " second") 
 
     ######################### Graph ##############################
@@ -554,6 +560,23 @@ class MyApp(QMainWindow):
     
     def selectTypeChange(self):
         self.draw()
+    
+    def selectPeakChange(self):
+        if self.ui.comboBox_peak.currentIndex() == 0: pass
+        else: pos = self.listPeak[self.ui.comboBox_peak.currentIndex()-1]
+        if self.matching == 0:
+            self.ui.horizontalSlider_graph.setValue(pos)
+            self.frameGraphUpdate = self.ui.horizontalSlider_graph.value()
+            self.sliderbusyGraph = False
+            self.isUpdateGraph = True
+        elif self.matching == 1:
+            current = pos - self.matchGraph
+            self.frameGraphUpdate = pos
+            self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
+            self.frameVideo = int(round(self.matchVideo + (current*(self.videoUpdate/self.graphUpdate))))
+            self.ui.horizontalSlider_video.setValue(self.frameVideo)
+            self.isUpdateGV = True
+            self.sliderbusyVideo = False
     
     def setGraphX(self):
         if self.ui.comboBox_graph.currentIndex() == 1:
@@ -624,15 +647,17 @@ class MyApp(QMainWindow):
                     self.frameGraphUpdate = 0
                     self.draw()  
                 # setting button and status bar
+                self.findPeak()
                 self.fileGraph = fileName[0]
                 self.ui.statusbar.showMessage("File Graph:: " + self.fileGraph)  
                 self.ui.comboBox_graph.setCurrentIndex(0)
+                self.ui.comboBox_peak.setCurrentIndex(0)
                 self.ui.forwardButton_graph.setEnabled(True)
                 self.ui.backwardButton_graph.setEnabled(True)
-                self.ui.autoButton.setEnabled(True)
                 self.ui.horizontalSlider_graph.setEnabled(True)
                 self.ui.comboBox_graph.setEnabled(True)
                 self.ui.comboBox_type.setEnabled(True)
+                self.ui.comboBox_peak.setEnabled(True)
                 self.isthreadActiveGraph = True
                 if self.isthreadActiveVideo and self.isthreadActiveGraph:
                     self.ui.startButton.setEnabled(True)
@@ -645,6 +670,7 @@ class MyApp(QMainWindow):
                     self.ui.matchingButton.setEnabled(True)
             except Exception as e:  
                 self.ui.statusbar.showMessage("Error::Please try again") 
+                self.errorMessage(e)     
 
     def draw(self):  
         self.ax1.clear() 
@@ -668,6 +694,22 @@ class MyApp(QMainWindow):
             self.ui.horizontalSlider_graph.setMaximum(self.maxGraphX-1)
             self.ax1.plot([self.data[self.frameGraphUpdate,10],self.data[self.frameGraphUpdate,-1]],[-100,100],'Gray',linewidth=2.0)    
         self.ui.GraphImage.canvas.draw()
+
+    def findPeak(self):
+        final_list = [] 
+        N = 3
+        A = np.array((self.data[:,8]))
+        peaks, _ = find_peaks(A,distance=200)    
+        list1 = peaks.tolist()
+        for i in range(0, N):  
+            max1 = 0
+            for j in range(len(list1)):      
+                if A[list1[j]] > max1: 
+                    max1 = A[list1[j]]
+                    position = list1[j]
+            list1.remove(position) 
+            final_list.append(position) 
+        self.listPeak = final_list
     
     def twos_comp(self, val, bits):                                                      
         """compute the 2's complement of int value val"""                          
@@ -699,8 +741,8 @@ class MyApp(QMainWindow):
             ret, frame = self.cap.read()
             self.frameVideo = self.stframe
             self.limg = frame
-            self.frameHeight = frame.shape[0]
-            self.frameWidth = frame.shape[1] 
+            self.frameHeight = frame.shape[0]/1.5
+            self.frameWidth = frame.shape[1]/1.5
             self.on_zoomfit_clicked()
             nchannel = frame.shape[2]
             limg2 = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  
@@ -722,7 +764,9 @@ class MyApp(QMainWindow):
                 self.ui.forwardButton.setEnabled(True)
                 self.ui.backwardButton.setEnabled(True)
                 self.ui.matchingButton.setEnabled(True)
-        except: self.ui.statusbar.showMessage("Error::Please try again")
+        except: 
+            self.ui.statusbar.showMessage("Error::Please try again") 
+            self.errorMessage(e)       
     
     def on_zoomfit_clicked(self): # for fitting frame of window   
         self.resizegoing = True
@@ -730,11 +774,11 @@ class MyApp(QMainWindow):
         if a.width()/self.frameWidth < a.height()/self.frameHeight:
             self.scaleFactor = a.width()/self.frameWidth
             self.startx = 0
-            self.starty = (a.height() - self.scaleFactor * self.frameHeight)/2
+            self.starty = (a.height() - self.scaleFactor * self.frameHeight) / 2
         else:
             self.scaleFactor=1.0*a.height()/self.frameHeight
             self.starty = 0
-            self.startx = (a.width() - self.scaleFactor * self.frameWidth)/2.0
+            self.startx = (a.width() - self.scaleFactor * self.frameWidth) / 2
         sleep(0.2)
         self.resizegoing = False
     
