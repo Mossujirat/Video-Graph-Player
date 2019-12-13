@@ -14,6 +14,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import datetime
 from scipy.signal import find_peaks
+import math
 
 ############## Video Updating ##############
 class workerThread(QThread):
@@ -202,11 +203,15 @@ class MyApp(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # set full screen
+        self.showMaximized()
+
         # set icon
         self.setWindowIcon(QtGui.QIcon('asset/Logo.ico')) 
         self.ui.slapButton.setIcon(QtGui.QIcon('asset/slapButton.png'))
         self.ui.slapButton2.setIcon(QtGui.QIcon('asset/slapButton.png'))
         self.ui.fallButton.setIcon(QtGui.QIcon('asset/fallButton.png'))
+        self.ui.saveButton.setIcon(QtGui.QIcon('asset/saveButton.png'))
         self.ui.pauseButton.setIcon(QtGui.QIcon('asset/pauseButton.png'))
         self.ui.startButton.setIcon(QtGui.QIcon('asset/startButton.png'))
         self.ui.forwardButton.setIcon(QtGui.QIcon('asset/forwardButton.png'))
@@ -223,6 +228,7 @@ class MyApp(QMainWindow):
         self.ui.slapButton.clicked.connect(self.slapButtonPressed)
         self.ui.slapButton2.clicked.connect(self.slapButton2Pressed)
         self.ui.fallButton.clicked.connect(self.fallButtonPressed)
+        self.ui.saveButton.clicked.connect(self.saveButtonPressed)
 
         # set graph and video button (Connection)
         self.ui.pauseButton.clicked.connect(self.pauseButtonPressed)
@@ -460,13 +466,14 @@ class MyApp(QMainWindow):
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
         config["Fall-Video"] = str(datetime.timedelta(seconds=self.timeVideo))
-        #config["Fall-Graph"] = str(self.timeGraph)
-        config["Fall-Graph"] = str(self.timeStamp[self.frameGraphUpdate])
+        self.falltime = self.timeStamp[self.frameGraphUpdate]
+        config["Fall-Graph"] = str(self.falltime)
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Fall-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+ 
             ", Fall-Graph = " +str(self.timeGraph)+ " second") 
         self.successMessage("Save successfully - Fall-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+ 
             ", Fall-Graph = " +str(self.timeGraph)+ " second")
+        self.ui.saveButton.setEnabled(True)
 
     def slapButtonPressed(self):
         # set name for saving file
@@ -486,8 +493,8 @@ class MyApp(QMainWindow):
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
         config["Slap1-Video"] = str(datetime.timedelta(seconds=self.timeVideo))
-        #config["Slap-Graph"] = str(self.timeGraph)
-        config["Slap1-Graph"] = str(self.timeStamp[self.frameGraphUpdate])
+        self.slaptime1 = self.timeStamp[self.frameGraphUpdate]
+        config["Slap1-Graph"] = str(self.slaptime2)
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Slap1-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
             ", Slap1-Graph = " +str(self.timeGraph)+ " second") 
@@ -512,13 +519,48 @@ class MyApp(QMainWindow):
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
         config["Slap2-Video"] = str(datetime.timedelta(seconds=self.timeVideo))
-        #config["Slap2-Graph"] = str(self.timeGraph)
-        config["Slap2-Graph"] = str(self.timeStamp[self.frameGraphUpdate])
+        self.slaptime2 = self.timeStamp[self.frameGraphUpdate]
+        config["Slap2-Graph"] = str(self.slaptime2)
         config.write()
         self.ui.statusbar.showMessage("Save successfully - Slap2-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
             ", Slap2-Graph = " +str(self.timeGraph)+ " second")  
         self.successMessage("Save successfully - Slap2-Video = " +str(datetime.timedelta(seconds=self.timeVideo))+
             ", Slap2-Graph = " +str(self.timeGraph)+ " second") 
+    
+    def saveButtonPressed(self):
+        self.ui.saveButton.setEnabled(False)
+        position = int(self.df[self.df['TimeStamp']==self.falltime]['TimestampCounter'].values)
+        datacrop = 200 #mS
+        pos1 = position-(datacrop*2)
+        pos2 = position-(datacrop*4)
+        #define Label 
+        self.df['Label'] = 0
+        self.df['Label'][pos2:pos1] = 1
+        self.df['Label'][pos1:position] = 2
+        self.df['Label'][position::] = 3
+        # cut data
+        try: 
+            position = int(self.df[self.df['TimeStamp']==self.slaptime2]['TimestampCounter'].values)
+            self.df.drop(columns=['Real_Time'], inplace=True)
+            self.df.drop(self.df.index[0:position+datacrop], inplace=True)
+            # set name for saving file
+            wordV = self.fileVideo.split('/')
+            NewwordV = wordV[len(wordV)-1].split('.')
+            fileNameV = NewwordV[0]
+            wordG = self.fileGraph.split('/')
+            NewwordG = wordG[len(wordG)-1].split('.')
+            fileNameG = NewwordG[0]
+            # set directory
+            directory = "Database"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            # set file name
+            filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+").csv"
+            self.df.to_csv(filename) 
+            self.successMessage("Save CSV file successfully")
+        except Exception as e:
+            self.errorMessage("Please click save slapping 2 button before click this button") 
+            #self.errorMessage(e) 
 
     ######################### Graph ##############################
     def backwardButtonGraphPressed(self):
@@ -563,20 +605,21 @@ class MyApp(QMainWindow):
     
     def selectPeakChange(self):
         if self.ui.comboBox_peak.currentIndex() == 0: pass
-        else: pos = self.listPeak[self.ui.comboBox_peak.currentIndex()-1]
-        if self.matching == 0:
-            self.ui.horizontalSlider_graph.setValue(pos)
-            self.frameGraphUpdate = self.ui.horizontalSlider_graph.value()
-            self.sliderbusyGraph = False
-            self.isUpdateGraph = True
-        elif self.matching == 1:
-            current = pos - self.matchGraph
-            self.frameGraphUpdate = pos
-            self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
-            self.frameVideo = int(round(self.matchVideo + (current*(self.videoUpdate/self.graphUpdate))))
-            self.ui.horizontalSlider_video.setValue(self.frameVideo)
-            self.isUpdateGV = True
-            self.sliderbusyVideo = False
+        else: 
+            pos = self.listPeak[self.ui.comboBox_peak.currentIndex()-1]
+            if self.matching == 0:
+                self.ui.horizontalSlider_graph.setValue(pos)
+                self.frameGraphUpdate = self.ui.horizontalSlider_graph.value()
+                self.sliderbusyGraph = False
+                self.isUpdateGraph = True
+            elif self.matching == 1:
+                current = pos - self.matchGraph
+                self.frameGraphUpdate = pos
+                self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
+                self.frameVideo = int(round(self.matchVideo + (current*(self.videoUpdate/self.graphUpdate))))
+                self.ui.horizontalSlider_video.setValue(self.frameVideo)
+                self.isUpdateGV = True
+                self.sliderbusyVideo = False
     
     def setGraphX(self):
         if self.ui.comboBox_graph.currentIndex() == 1:
@@ -625,7 +668,7 @@ class MyApp(QMainWindow):
         if len(fileName[0])>0:
             try:
                 try:
-                    self.df = pd.read_csv(fileName[0], converters={"TimestampCounter": lambda x: int(x, 16),
+                    self.data = pd.read_csv(fileName[0], converters={"TimestampCounter": lambda x: int(x, 16),
                                                                     "TimeStamp": lambda x: int(x, 16)/1000000,           # convert column Timestamp to 
                                                                     "Ax": lambda x: self.twos_comp(int(x, 16), 16)*(1/2048),  # convert data with two complement  * +-16G scale 
                                                                     "Ay": lambda x: self.twos_comp(int(x, 16), 16)*(1/2048),  # convert data with two complement  * +-16G scale 
@@ -633,16 +676,22 @@ class MyApp(QMainWindow):
                                                                     "Gx": lambda x: self.twos_comp(int(x, 16), 16)/131,       # convert data with two complement  * +-2000 scale 
                                                                     "Gy": lambda x: self.twos_comp(int(x, 16), 16)/131,       # convert data with two complement  * +-2000 scale 
                                                                     "Gz": lambda x: self.twos_comp(int(x, 16), 16)/131})      # convert data with two complement  * +-2000 scale 
+                    self.df = self.data.copy()
                     self.df['rms_A'] =  np.sqrt((self.df.Ax*self.df.Ax)+(self.df.Ay*self.df.Ay)+(self.df.Az*self.df.Az)) # add rms acc signals to dataframe  
                     self.df['rms_G'] =  np.sqrt((self.df.Gx*self.df.Gx)+(self.df.Gy*self.df.Gy)+(self.df.Gz*self.df.Gz)) # add rms gyro signals to dataframe
                     self.df['Real_Time'] = (self.df.TimestampCounter*0.0005)
+                    self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
+                    self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.timeStamp = self.df["TimeStamp"]
                     self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
                 except Exception as e: 
-                    self.df = pd.read_csv(fileName[0])
+                    self.data = pd.read_csv(fileName[0])
+                    self.df = self.data.copy()
                     self.df['Real_Time'] = (self.df.TimestampCounter*0.0005)
+                    self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
+                    self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
@@ -741,8 +790,8 @@ class MyApp(QMainWindow):
             ret, frame = self.cap.read()
             self.frameVideo = self.stframe
             self.limg = frame
-            self.frameHeight = frame.shape[0]/1.5
-            self.frameWidth = frame.shape[1]/1.5
+            self.frameHeight = frame.shape[0]
+            self.frameWidth = frame.shape[1]
             self.on_zoomfit_clicked()
             nchannel = frame.shape[2]
             limg2 = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  
@@ -764,7 +813,7 @@ class MyApp(QMainWindow):
                 self.ui.forwardButton.setEnabled(True)
                 self.ui.backwardButton.setEnabled(True)
                 self.ui.matchingButton.setEnabled(True)
-        except: 
+        except Exception as e:
             self.ui.statusbar.showMessage("Error::Please try again") 
             self.errorMessage(e)       
     
