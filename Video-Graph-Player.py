@@ -528,7 +528,6 @@ class MyApp(QMainWindow):
             ", Slap2-Graph = " +str(self.timeGraph)+ " second") 
     
     def saveButtonPressed(self):
-        self.ui.saveButton.setEnabled(False)
         position = int(self.df[self.df['TimeStamp']==self.falltime]['TimestampCounter'].values)
         datacrop = 200 #mS
         pos1 = position-(datacrop*2)
@@ -558,6 +557,7 @@ class MyApp(QMainWindow):
             filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+").csv"
             self.df.to_csv(filename) 
             self.successMessage("Save CSV file successfully")
+            self.ui.saveButton.setEnabled(False)
         except Exception as e:
             self.errorMessage("Please click save slapping 2 button before click this button") 
             #self.errorMessage(e) 
@@ -692,9 +692,14 @@ class MyApp(QMainWindow):
                     self.df['Real_Time'] = (self.df.TimestampCounter*0.0005)
                     self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
                     self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
+                    self.timeStamp = self.df["TimeStamp"]
                     self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
+                # Setting parameters
+                self.slaptime1 = None
+                self.slaptime2 = None
+                self.falltime = None
                 # setting button and status bar
                 self.findPeak()
                 self.fileGraph = fileName[0]
@@ -768,8 +773,6 @@ class MyApp(QMainWindow):
 
     ######################### Video ##############################
     def openButtonPressed(self):
-        self.frameVideo = 0
-        self.ui.horizontalSlider_video.setValue(self.frameVideo)
         try:
             fileName = QFileDialog.getOpenFileName(None,caption="Select Video File",directory=QtCore.QDir.currentPath())
             if len(fileName[0])>0:
@@ -789,6 +792,7 @@ class MyApp(QMainWindow):
             self.cap.set(1,self.stframe)
             ret, frame = self.cap.read()
             self.frameVideo = self.stframe
+            self.ui.horizontalSlider_video.setValue(self.frameVideo)
             self.limg = frame
             self.frameHeight = frame.shape[0]
             self.frameWidth = frame.shape[1]
