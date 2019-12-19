@@ -1,4 +1,3 @@
-# Tag version
 import os, sys
 from configobj import ConfigObj
 from time import sleep
@@ -663,7 +662,6 @@ class MyApp(QMainWindow):
         self.isUpdateGraph = True
     
     def fileButtonPressed(self):
-        self.frameGraphUpdate = 0
         self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
         fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in Excel",directory=QtCore.QDir.currentPath())
         if len(fileName[0])>0:
