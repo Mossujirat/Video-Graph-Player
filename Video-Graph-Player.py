@@ -223,6 +223,7 @@ class MyApp(QMainWindow):
         self.ui.matchingButton.setIcon(QtGui.QIcon('asset/matchingButton.png'))
         self.ui.fileButton.setIcon(QtGui.QIcon('asset/fileButton.png'))
         self.ui.openButton.setIcon(QtGui.QIcon('asset/openButton.png'))
+        self.ui.personalButton.setIcon(QtGui.QIcon('asset/personalButton.png'))
 
         # set save config file (slap button and fall button)
         self.ui.slapButton.clicked.connect(self.slapButtonPressed)
@@ -236,7 +237,10 @@ class MyApp(QMainWindow):
         self.ui.forwardButton.clicked.connect(self.forwardButtonPressed)
         self.ui.backwardButton.clicked.connect(self.backwardButtonPressed)
         self.ui.matchingButton.clicked.connect(self.matchingButtonPressed)
-        self.ui.statusbar.showMessage("Select File Video and Data")
+
+        # For open personal data file
+        self.ui.personalButton.clicked.connect(self.personalButtonPressed)
+        self.ui.statusbar.showMessage("Select personal data file before opening video and graph")
 
         # set graph button (Connection)
         self.ui.fileButton.clicked.connect(self.fileButtonPressed)      
@@ -299,6 +303,23 @@ class MyApp(QMainWindow):
         self.wthread3.start() 
         self.matching = 0
     
+    ######################### Open personal data #######################
+    def personalButtonPressed(self):
+        fileName = QFileDialog.getOpenFileName(None,caption="Select Personal Data File in Excel",directory=QtCore.QDir.currentPath())
+        if len(fileName[0])>0: 
+            try:
+                xls = pd.ExcelFile(fileName[0])
+                self.dfPersonal = pd.read_excel(xls)
+                print(self.dfPersonal.BMI)
+                self.ui.fileButton.setEnabled(True)
+                self.ui.openButton.setEnabled(True)
+                self.ui.personalButton.setEnabled(False)
+                self.ui.statusbar.showMessage("Open Personal Data successfully") 
+                self.successMessage("Open Personal Data successfully")
+            except Exception as e:
+                self.ui.statusbar.showMessage("Error::Please try again") 
+                self.errorMessage(e) 
+                    
     ######################### Calculate time ########################
     def calculationTime(self):
         self.timeGraph = round((self.frameGraphUpdate*0.0005),2)
@@ -549,6 +570,16 @@ class MyApp(QMainWindow):
             wordG = self.fileGraph.split('/')
             NewwordG = wordG[len(wordG)-1].split('.')
             fileNameG = NewwordG[0]
+            # set personal parameter
+            try: 
+                splitFileNameG = fileNameG.split('_')
+                participant_ID = splitFileNameG[1]
+                print(participant_ID)
+                for i in range(len(self.dfPersonal.Participant_ID)):
+                    if self.dfPersonal.Participant_ID[i].find(participant_ID)>-1:
+                        participant_BMI = self.dfPersonal.BMI[i]
+                        self.df['BMI'] = participant_BMI
+            except: pass
             # set directory
             directory = "Database"
             if not os.path.exists(directory):
@@ -559,8 +590,8 @@ class MyApp(QMainWindow):
             self.successMessage("Save CSV file successfully")
             self.ui.saveButton.setEnabled(False)
         except Exception as e:
-            self.errorMessage("Please click save slapping 2 button before click this button") 
-            #self.errorMessage(e) 
+            #self.errorMessage("Please click save slapping 2 button before click this button") 
+            self.errorMessage(e) 
 
     ######################### Graph ##############################
     def backwardButtonGraphPressed(self):
@@ -663,7 +694,7 @@ class MyApp(QMainWindow):
     
     def fileButtonPressed(self):
         self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
-        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in Excel",directory=QtCore.QDir.currentPath())
+        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in CSV File",directory=QtCore.QDir.currentPath())
         if len(fileName[0])>0:
             try:
                 try:

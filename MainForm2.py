@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'MainForm8.ui'
+# Form implementation generated from reading ui file 'MainForm2.ui'
 #
 # Created by: PyQt5 UI code generator 5.12
 #
@@ -37,12 +37,16 @@ class Ui_MainWindow(object):
         self.mainarea1.setObjectName("mainarea1")
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.mainarea1)
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.personalButton = QtWidgets.QPushButton(self.mainarea1)
+        self.personalButton.setObjectName("personalButton")
+        self.horizontalLayout_5.addWidget(self.personalButton)
         self.openButton = QtWidgets.QPushButton(self.mainarea1)
-        self.openButton.setEnabled(True)
+        self.openButton.setEnabled(False)
         self.openButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.openButton.setObjectName("openButton")
         self.horizontalLayout_5.addWidget(self.openButton)
         self.fileButton = QtWidgets.QPushButton(self.mainarea1)
+        self.fileButton.setEnabled(False)
         self.fileButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.fileButton.setObjectName("fileButton")
         self.horizontalLayout_5.addWidget(self.fileButton)
@@ -242,7 +246,8 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Video Graph Player - Action"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Video Player with Signal"))
+        self.personalButton.setText(_translate("MainWindow", "Open Personal Data"))
         self.openButton.setText(_translate("MainWindow", "Open Video"))
         self.fileButton.setText(_translate("MainWindow", "Open Data File"))
         self.slapButton.setText(_translate("MainWindow", "Save Slapping 1"))
