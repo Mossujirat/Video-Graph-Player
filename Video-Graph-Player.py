@@ -579,6 +579,12 @@ class MyApp(QMainWindow):
                     if self.dfPersonal.Participant_ID[i].find(participant_ID)>-1:
                         participant_BMI = self.dfPersonal.BMI[i]
                         self.df['BMI'] = participant_BMI
+                        participant_SexM = self.dfPersonal.Sex_M[i]
+                        self.df['SEXM'] = participant_SexM
+                        participant_SexF = self.dfPersonal.Sex_F[i]
+                        self.df['SEXF'] = participant_SexF
+                        participant_Active = self.dfPersonal.Active[i]
+                        self.df['Active'] = participant_Active
             except: pass
             # set directory
             directory = "Database"
