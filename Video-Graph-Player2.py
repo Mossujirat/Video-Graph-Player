@@ -309,7 +309,7 @@ class MyApp(QMainWindow):
     
     ######################### Open personal data #######################
     def personalButtonPressed(self):
-        fileName = QFileDialog.getOpenFileName(None,caption="Select Personal Data File in Excel",directory=QtCore.QDir.currentPath())
+        fileName = QFileDialog.getOpenFileName(None,caption="Select Personal Data File in Excel", directory="D:/")
         if len(fileName[0])>0: 
             try:
                 xls = pd.ExcelFile(fileName[0])
@@ -482,7 +482,10 @@ class MyApp(QMainWindow):
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
         # set directory
-        directory = "Database"
+        directory = ""
+        for i in range(len(wordG)-1):
+            directory = directory + wordG[i] + "/"
+        directory = directory + "/Database"
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
@@ -508,7 +511,10 @@ class MyApp(QMainWindow):
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
         # set directory
-        directory = "Database"
+        directory = ""
+        for i in range(len(wordG)-1):
+            directory = directory + wordG[i] + "/"
+        directory = directory + "/Database"
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
@@ -535,7 +541,10 @@ class MyApp(QMainWindow):
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
         # set directory
-        directory = "Database"
+        directory = ""
+        for i in range(len(wordG)-1):
+            directory = directory + wordG[i] + "/"
+        directory = directory + "/Database"
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
@@ -561,7 +570,10 @@ class MyApp(QMainWindow):
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
         # set directory
-        directory = "Database"
+        directory = ""
+        for i in range(len(wordG)-1):
+            directory = directory + wordG[i] + "/"
+        directory = directory + "/Database"
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
@@ -615,7 +627,10 @@ class MyApp(QMainWindow):
                         self.df['Active'] = participant_Active
             except: pass
             # set directory
-            directory = "Database"
+            directory = ""
+            for i in range(len(wordG)-1):
+                directory = directory + wordG[i] + "/"
+            directory = directory + "/Database"
             if not os.path.exists(directory):
                 os.makedirs(directory)
             # set file name
@@ -728,7 +743,7 @@ class MyApp(QMainWindow):
     
     def fileButtonPressed(self):
         self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
-        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in Excel",directory=QtCore.QDir.currentPath())
+        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in Excel",directory="D:/")
         if len(fileName[0])>0:
             try:
                 try:
@@ -839,7 +854,7 @@ class MyApp(QMainWindow):
     ######################### Video ##############################
     def openButtonPressed(self):
         try:
-            fileName = QFileDialog.getOpenFileName(None,caption="Select Video File",directory=QtCore.QDir.currentPath())
+            fileName = QFileDialog.getOpenFileName(None,caption="Select Video File",directory="D:/")
             if len(fileName[0])>0:
                 self.cap = cv2.VideoCapture(fileName[0])
                 self.isthreadActiveVideo = True
