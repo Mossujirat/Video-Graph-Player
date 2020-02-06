@@ -347,13 +347,13 @@ class MyApp(QMainWindow):
                                                                     "Gy": lambda x: self.twos_comp(int(x, 16), 16)/131,       # convert data with two complement  * +-2000 scale 
                                                                     "Gz": lambda x: self.twos_comp(int(x, 16), 16)/131})      # convert data with two complement  * +-2000 scale 
                     self.df = self.data.copy()
-                    self.df['rms_A'] =  np.sqrt((self.df.Ax*self.df.Ax)+(self.df.Ay*self.df.Ay)+(self.df.Az*self.df.Az)) # add rms acc signals to dataframe  
-                    self.df['rms_G'] =  np.sqrt((self.df.Gx*self.df.Gx)+(self.df.Gy*self.df.Gy)+(self.df.Gz*self.df.Gz)) # add rms gyro signals to dataframe
+                    self.df['rss_A'] =  np.sqrt((self.df.Ax*self.df.Ax)+(self.df.Ay*self.df.Ay)+(self.df.Az*self.df.Az)) # add rss acc signals to dataframe  
+                    self.df['rss_G'] =  np.sqrt((self.df.Gx*self.df.Gx)+(self.df.Gy*self.df.Gy)+(self.df.Gz*self.df.Gz)) # add rss gyro signals to dataframe
                     self.df['Real_Time'] = (self.df.TimestampCounter*0.0005)
                     self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
                     self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.timeStamp = self.df["TimeStamp"]
-                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
+                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rss_A': 3,'rss_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
                 except Exception as e: 
@@ -363,7 +363,7 @@ class MyApp(QMainWindow):
                     self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
                     self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.timeStamp = self.df["TimeStamp"]
-                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
+                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rss_A': 3,'rss_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
                 # Setting parameters
@@ -398,7 +398,7 @@ class MyApp(QMainWindow):
             self.ax1.plot(self.data[:,10],self.data[:,2],'y') # Ax
             self.ax1.plot(self.data[:,10],self.data[:,3],'r') # Ay
             self.ax1.plot(self.data[:,10],self.data[:,4],'g') # Az
-            self.ax1.plot(self.data[:,10],self.data[:,8],'b') # rms_A
+            self.ax1.plot(self.data[:,10],self.data[:,8],'b') # rss_A
             self.ax1.set_ylim(-10, 10)
             self.setGraphX()
             self.ui.horizontalSlider_graph.setMaximum(self.maxGraphX-1)
@@ -407,7 +407,7 @@ class MyApp(QMainWindow):
             self.ax1.plot(self.data[:,10],self.data[:,5],'y') # Gx
             self.ax1.plot(self.data[:,10],self.data[:,6],'r') # Gy
             self.ax1.plot(self.data[:,10],self.data[:,7],'g') # Gz
-            self.ax1.plot(self.data[:,10],self.data[:,9],'b') # rms_G
+            self.ax1.plot(self.data[:,10],self.data[:,9],'b') # rss_G
             self.ax1.set_ylim(-100, 100)
             self.setGraphX()
             self.ui.horizontalSlider_graph.setMaximum(self.maxGraphX-1)

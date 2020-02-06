@@ -305,12 +305,13 @@ class MyApp(QMainWindow):
     
     ######################### Open personal data #######################
     def personalButtonPressed(self):
+        self.directory = "D:/"
         fileName = QFileDialog.getOpenFileName(None,caption="Select Personal Data File in Excel",directory="D:/")
+        self.directory = os.path.dirname(fileName[0])
         if len(fileName[0])>0: 
             try:
                 xls = pd.ExcelFile(fileName[0])
                 self.dfPersonal = pd.read_excel(xls)
-                print(self.dfPersonal.BMI)
                 self.ui.fileButton.setEnabled(True)
                 self.ui.openButton.setEnabled(True)
                 self.ui.personalButton.setEnabled(False)
@@ -471,9 +472,6 @@ class MyApp(QMainWindow):
     ######################### Save config ##############################
     def fallButtonPressed(self):
         # set name for saving file
-        wordV = self.fileVideo.split('/')
-        NewwordV = wordV[len(wordV)-1].split('.')
-        fileNameV = NewwordV[0]
         wordG = self.fileGraph.split('/')
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
@@ -485,7 +483,7 @@ class MyApp(QMainWindow):
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
-        filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+")"+".config"
+        filename = directory+"/"+str(fileNameG)+"(time).config"
         # Save 
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
@@ -501,9 +499,6 @@ class MyApp(QMainWindow):
 
     def slapButtonPressed(self):
         # set name for saving file
-        wordV = self.fileVideo.split('/')
-        NewwordV = wordV[len(wordV)-1].split('.')
-        fileNameV = NewwordV[0]
         wordG = self.fileGraph.split('/')
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
@@ -515,7 +510,7 @@ class MyApp(QMainWindow):
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
-        filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+")"+".config"
+        filename = directory+"/"+str(fileNameG)+"(time).config"
         # Save 
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
@@ -530,9 +525,6 @@ class MyApp(QMainWindow):
 
     def slapButton2Pressed(self):
         # set name for saving file
-        wordV = self.fileVideo.split('/')
-        NewwordV = wordV[len(wordV)-1].split('.')
-        fileNameV = NewwordV[0]
         wordG = self.fileGraph.split('/')
         NewwordG = wordG[len(wordG)-1].split('.')
         fileNameG = NewwordG[0]
@@ -544,7 +536,7 @@ class MyApp(QMainWindow):
         if not os.path.exists(directory):
             os.makedirs(directory)
         # set file name
-        filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+")"+".config"
+        filename = directory+"/"+str(fileNameG)+"(time).config"
         # Save 
         config = ConfigObj(filename, encoding='utf8')
         config.filename = filename
@@ -562,16 +554,18 @@ class MyApp(QMainWindow):
         datacrop = 200 #mS
         pos1 = position-(datacrop*2)
         pos2 = position-(datacrop*4)
+        pos3 = position-(datacrop*10)
+        pos0 = position+(datacrop*6)
         #define Label 
         self.df['Label'] = 0
         self.df['Label'][pos2:pos1] = 1
         self.df['Label'][pos1:position] = 2
-        self.df['Label'][position::] = 3
+        self.df['Label'][position:pos0] = 3
         # cut data
         try: 
-            position = int(self.df[self.df['TimeStamp']==self.slaptime2]['TimestampCounter'].values)
+            self.df.drop(self.df.index[pos0::], inplace=True)
+            self.df.drop(self.df.index[0:pos3], inplace=True)
             self.df.drop(columns=['Real_Time'], inplace=True)
-            self.df.drop(self.df.index[0:position+datacrop], inplace=True)
             # set name for saving file
             wordV = self.fileVideo.split('/')
             NewwordV = wordV[len(wordV)-1].split('.')
@@ -583,7 +577,6 @@ class MyApp(QMainWindow):
             try: 
                 splitFileNameG = fileNameG.split('_')
                 participant_ID = splitFileNameG[1]
-                print(participant_ID)
                 for i in range(len(self.dfPersonal.Participant_ID)):
                     if self.dfPersonal.Participant_ID[i].find(participant_ID)>-1:
                         participant_BMI = self.dfPersonal.BMI[i]
@@ -603,7 +596,7 @@ class MyApp(QMainWindow):
             if not os.path.exists(directory):
                 os.makedirs(directory)
             # set file name
-            filename = directory+"/"+str(fileNameV)+"("+str(fileNameG)+").csv"
+            filename = directory+"/"+str(fileNameG)+"(Cropped).csv"
             self.df.to_csv(filename) 
             self.successMessage("Save CSV file successfully")
             self.ui.saveButton.setEnabled(False)
@@ -711,8 +704,8 @@ class MyApp(QMainWindow):
         self.isUpdateGraph = True
     
     def fileButtonPressed(self):
-        self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
-        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in CSV File",directory="D:/")
+        fileName = QFileDialog.getOpenFileName(None,caption="Select Data File in CSV File",directory=self.directory)
+        self.directory = os.path.dirname(fileName[0])
         if len(fileName[0])>0:
             try:
                 try:
@@ -725,13 +718,13 @@ class MyApp(QMainWindow):
                                                                     "Gy": lambda x: self.twos_comp(int(x, 16), 16)/131,       # convert data with two complement  * +-2000 scale 
                                                                     "Gz": lambda x: self.twos_comp(int(x, 16), 16)/131})      # convert data with two complement  * +-2000 scale 
                     self.df = self.data.copy()
-                    self.df['rms_A'] =  np.sqrt((self.df.Ax*self.df.Ax)+(self.df.Ay*self.df.Ay)+(self.df.Az*self.df.Az)) # add rms acc signals to dataframe  
-                    self.df['rms_G'] =  np.sqrt((self.df.Gx*self.df.Gx)+(self.df.Gy*self.df.Gy)+(self.df.Gz*self.df.Gz)) # add rms gyro signals to dataframe
+                    self.df['rss_A'] =  np.sqrt((self.df.Ax*self.df.Ax)+(self.df.Ay*self.df.Ay)+(self.df.Az*self.df.Az)) # add rss acc signals to dataframe  
+                    self.df['rss_G'] =  np.sqrt((self.df.Gx*self.df.Gx)+(self.df.Gy*self.df.Gy)+(self.df.Gz*self.df.Gz)) # add rss gyro signals to dataframe
                     self.df['Real_Time'] = (self.df.TimestampCounter*0.0005)
                     self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
                     self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.timeStamp = self.df["TimeStamp"]
-                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
+                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rss_A': 3,'rss_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
                 except Exception as e: 
@@ -741,7 +734,7 @@ class MyApp(QMainWindow):
                     self.df['Deg_saggital'] = np.arctan(self.df['Az']/self.df['Ay'])*(180/math.pi)
                     self.df['Deg_Frontal'] = np.arctan(self.df['Ax']/self.df['Ay'])*(180/math.pi)
                     self.timeStamp = self.df["TimeStamp"]
-                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rms_A': 3,'rms_G': 3}) # roundup data     
+                    self.df = self.df.round({'Ax': 3,'Ay': 3,'Az': 3,'Gx': 3,'Gy': 3,'Gz': 3,'rss_A': 3,'rss_G': 3}) # roundup data     
                     self.frameGraphUpdate = 0
                     self.draw()  
                 # Setting parameters
@@ -754,6 +747,7 @@ class MyApp(QMainWindow):
                 self.ui.statusbar.showMessage("File Graph:: " + self.fileGraph)  
                 self.ui.comboBox_graph.setCurrentIndex(0)
                 self.ui.comboBox_peak.setCurrentIndex(0)
+                self.ui.horizontalSlider_graph.setValue(self.frameGraphUpdate)
                 self.ui.forwardButton_graph.setEnabled(True)
                 self.ui.backwardButton_graph.setEnabled(True)
                 self.ui.horizontalSlider_graph.setEnabled(True)
@@ -781,7 +775,7 @@ class MyApp(QMainWindow):
             self.ax1.plot(self.data[:,10],self.data[:,2],'y') # Ax
             self.ax1.plot(self.data[:,10],self.data[:,3],'r') # Ay
             self.ax1.plot(self.data[:,10],self.data[:,4],'g') # Az
-            self.ax1.plot(self.data[:,10],self.data[:,8],'b') # rms_A
+            self.ax1.plot(self.data[:,10],self.data[:,8],'b') # rss_A
             self.ax1.set_ylim(-10, 10)
             self.setGraphX()
             self.ui.horizontalSlider_graph.setMaximum(self.maxGraphX-1)
@@ -790,7 +784,7 @@ class MyApp(QMainWindow):
             self.ax1.plot(self.data[:,10],self.data[:,5],'y') # Gx
             self.ax1.plot(self.data[:,10],self.data[:,6],'r') # Gy
             self.ax1.plot(self.data[:,10],self.data[:,7],'g') # Gz
-            self.ax1.plot(self.data[:,10],self.data[:,9],'b') # rms_G
+            self.ax1.plot(self.data[:,10],self.data[:,9],'b') # rss_G
             self.ax1.set_ylim(-100, 100)
             self.setGraphX()
             self.ui.horizontalSlider_graph.setMaximum(self.maxGraphX-1)
@@ -799,7 +793,7 @@ class MyApp(QMainWindow):
 
     def findPeak(self):
         final_list = [] 
-        N = 3
+        N = 5
         A = np.array((self.data[:,8]))
         peaks, _ = find_peaks(A,distance=200)    
         list1 = peaks.tolist()
@@ -822,7 +816,8 @@ class MyApp(QMainWindow):
     ######################### Video ##############################
     def openButtonPressed(self):
         try:
-            fileName = QFileDialog.getOpenFileName(None,caption="Select Video File",directory="D:/")
+            fileName = QFileDialog.getOpenFileName(None,caption="Select Video File",directory=self.directory)
+            self.directory = os.path.dirname(fileName[0])
             if len(fileName[0])>0:
                 self.cap = cv2.VideoCapture(fileName[0])
                 self.isthreadActiveVideo = True
